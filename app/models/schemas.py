@@ -1,8 +1,11 @@
+from datetime import datetime
 from typing import Optional, Any
 
 from bson import ObjectId
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, EmailStr
 from pydantic_core import core_schema
+
+from app.constants import UserRole
 
 
 class PyObjectId(ObjectId):
@@ -30,6 +33,11 @@ class PyObjectId(ObjectId):
 class BusinessCreate(BaseModel):
     name: str
 
+class Session(BaseModel):
+    user_id: ObjectId
+    session_id: str
+    expired_at: datetime
+
 
 class Business(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
@@ -41,16 +49,23 @@ class Business(BaseModel):
     }
 
 class UserCreate(BaseModel):
-    name: str
-    business_id: ObjectId
+    email: EmailStr
+    password: str
 
 class User(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
-    name: str
-    business_id: ObjectId
+    email: EmailStr
 
     model_config = {
         "populate_by_name": True,
         "arbitrary_types_allowed": True,
         "json_encoders": {ObjectId: str}
     }
+
+class BusinessUserMapping(BaseModel):
+    user_id: ObjectId
+    business_id: ObjectId
+    role: UserRole
+    joined_at: datetime
+    is_approved: bool = True
+    approved_by: Optional[ObjectId] = None
