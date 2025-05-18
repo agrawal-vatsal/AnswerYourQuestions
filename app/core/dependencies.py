@@ -1,25 +1,28 @@
 from datetime import datetime
 
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Depends, status
+from fastapi.security import APIKeyHeader
 
 from app.db.mongo import db
 from app.models.schemas import User
 
+api_key_header = APIKeyHeader(name="Authorization")
 
-async def get_current_user(request: Request) -> User:
-    session_id = request.cookies.get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
 
-    session = await db.sessions.find_one({"session_id": session_id})
-    if not session:
-        raise HTTPException(status_code=401, detail="Invalid session")
+async def get_current_user(authorization: str = Depends(api_key_header)) -> User:
+    if not authorization or not authorization.startswith("Token "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
 
-    if session["expired_at"] < datetime.now():
-        raise HTTPException(status_code=401, detail="Session expired")
+    token = authorization.split(" ")[1]
+    user = await db.users.find_one({"token": token})
 
-    user = await db.users.find_one({"_id": session["user_id"]})
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if user.get("token_expiry") and user.get("token_expiry") < datetime.now():
+        raise HTTPException(status_code=401, detail="Token expired")
 
     return User(**user)

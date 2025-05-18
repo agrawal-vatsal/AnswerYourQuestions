@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, Any
 
 from bson import ObjectId
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, EmailStr
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, EmailStr, constr
 from pydantic_core import core_schema
 
 from app.constants import UserRole
@@ -11,7 +11,7 @@ from app.constants import UserRole
 class PyObjectId(ObjectId):
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
+            cls, source_type: Any, handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_wrap_validator_function(
             cls.validate,
@@ -30,13 +30,9 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, _core_schema, _handler):
         return {"type": "string"}
 
+
 class BusinessCreate(BaseModel):
     name: str
-
-class Session(BaseModel):
-    user_id: ObjectId
-    session_id: str
-    expired_at: datetime
 
 
 class Business(BaseModel):
@@ -45,27 +41,37 @@ class Business(BaseModel):
     model_config = {
         "populate_by_name": True,
         "arbitrary_types_allowed": True,
-        "json_encoders": {ObjectId: str}
+        "json_encoders": {ObjectId: str},
     }
+
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+
 class User(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
     email: EmailStr
+    token: Optional[constr(min_length=36, max_length=36)]
+    token_expiry: Optional[datetime]
 
     model_config = {
         "populate_by_name": True,
         "arbitrary_types_allowed": True,
-        "json_encoders": {ObjectId: str}
+        "json_encoders": {ObjectId: str},
     }
 
+
 class BusinessUserMapping(BaseModel):
-    user_id: ObjectId
-    business_id: ObjectId
+    user_id: PyObjectId
+    business_id: PyObjectId
     role: UserRole
     joined_at: datetime
-    is_approved: bool = True
-    approved_by: Optional[ObjectId] = None
+    approved_by: Optional[PyObjectId] = None
+
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str},
+    }

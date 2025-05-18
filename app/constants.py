@@ -7,4 +7,5 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     USER = "user"
 
-LIFETIME_OF_A_SESSION = timedelta(days=7)
+
+LIFETIME_OF_A_TOKEN = timedelta(days=7)
