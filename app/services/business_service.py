@@ -29,6 +29,16 @@ async def create_business(business_data: dict, user: User) -> Business:
     return Business(**business)
 
 
+def get_valid_business_for_user_kwargs(user: User) -> dict:
+    return {
+        "user_id": user.id,
+        "$or": [
+            {"role": UserRole.CREATOR},
+            {"approved_by": {"$exists": True, "$ne": None}},
+        ],
+    }
+
+
 async def get_business_by_id(business_id: str, user: User) -> Optional[Business]:
     try:
         business_id = ObjectId(business_id)
@@ -41,8 +51,8 @@ async def get_business_by_id(business_id: str, user: User) -> Optional[Business]
 
     business_user_mapping = await business_user_mapping_collection.find_one(
         {
-            "business_id": business_id, "user_id": user.id,
-            "$or": [{"role": "creator"}, {"approved_by": {"$exists": True, "$ne": None}}],
+            "business_id": business_id,
+            **get_valid_business_for_user_kwargs(user),
         }
     )
     if not business_user_mapping:
@@ -52,3 +62,17 @@ async def get_business_by_id(business_id: str, user: User) -> Optional[Business]
         )
 
     return Business(**business)
+
+
+async def get_businesses(user: User) -> list[Business]:
+    business_user_mapping = await business_user_mapping_collection.find(
+        get_valid_business_for_user_kwargs(user)
+        ).to_list(length=None)
+
+    if not business_user_mapping:
+        return []
+
+    business_ids = [mapping["business_id"] for mapping in business_user_mapping]
+    businesses = await business_collection.find({"_id": {"$in": business_ids}}).to_list(length=None)
+
+    return [Business(**business) for business in businesses]

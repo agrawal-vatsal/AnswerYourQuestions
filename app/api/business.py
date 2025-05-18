@@ -3,7 +3,7 @@ from typing_extensions import Optional
 
 from app.core.dependencies import get_current_user
 from app.models.schemas import Business, BusinessCreate
-from app.services.business_service import create_business, get_business_by_id
+from app.services.business_service import create_business, get_business_by_id, get_businesses
 
 router = APIRouter()
 
@@ -11,6 +11,11 @@ router = APIRouter()
 @router.post("/business", response_model=Business)
 async def create_business_route(business: BusinessCreate, user=Depends(get_current_user)):
     return await create_business(business.model_dump(exclude_unset=True), user=user)
+
+
+@router.get("/business", response_model=list[Business])
+async def get_businesses_route(user=Depends(get_current_user)) -> list[Business]:
+    return await get_businesses(user)
 
 
 @router.get("/business/{business_id}", response_model=Business)
