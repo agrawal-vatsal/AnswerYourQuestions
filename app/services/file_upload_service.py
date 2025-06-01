@@ -1,10 +1,12 @@
 from fastapi import HTTPException
 
 from app.db.mongo import business_user_mapping_collection, file_upload_collection
-from app.models.schemas import FileUploadCreate
+from app.models.schemas import FileUploadCreate, User
 
 
-async def upload_file(file_data: FileUploadCreate, business_id: str, user) -> dict:
+async def upload_file(
+        file_data: FileUploadCreate, business_id: str, user: User, kafka_service,
+) -> dict:
     """
     Upload a file to the specified business.
     """
@@ -21,11 +23,16 @@ async def upload_file(file_data: FileUploadCreate, business_id: str, user) -> di
             detail="You are not authorized to upload files to this business"
         )
 
-    file_upload_collection.insert_one(
+    uploaded_file = file_upload_collection.insert_one(
         {"business_id": business_id, "user_id": user.id, **file_data.model_dump()}
-        )
+    )
+
+    kafka_service.process_file_upload(uploaded_file.inserted_id)
 
     return {
         "message": "File uploaded successfully",
     }
 
+
+async def process_file_upload(upload_id: str) -> None:
+    pass

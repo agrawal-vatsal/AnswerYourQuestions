@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from app.api.business import router as business_router
 from app.api.auth import router as auth_router
+from app.core.startup_shutdown import startup_event, shutdown_event
 from app.db.indexes import create_indexes
 
 app = FastAPI(
@@ -10,11 +11,9 @@ app = FastAPI(
     version="0.1.0"
 )
 
-
-@app.on_event("startup")
-async def startup_db_client():
-    await create_indexes()
-
+app.add_event_handler("startup", create_indexes)
+app.add_event_handler("startup", startup_event)
+app.add_event_handler("shutdown", shutdown_event)
 
 app.include_router(business_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
