@@ -10,3 +10,4 @@ db = client[MONGO_DB_NAME]
 user_collection = db.users
 business_collection = db.business
 business_user_mapping_collection = db.business_user_mapping
+file_upload_collection = db.file_uploads

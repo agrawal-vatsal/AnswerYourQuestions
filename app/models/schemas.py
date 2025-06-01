@@ -76,12 +76,16 @@ class BusinessUserMapping(BaseModel):
         "json_encoders": {ObjectId: str},
     }
 
+class FileUploadCreate(BaseModel):
+    file_url: FileUrl
+    file_type: FileType
+
 class FileUpload(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
     file_url: FileUrl
     file_type: FileType
-    status: FileUploadStatus
-    created_at: datetime
+    status: FileUploadStatus = Field(default=FileUploadStatus.PENDING)
+    created_at: datetime = Field(default_factory=datetime.now)
     processed_at: Optional[datetime] = None
     processing_started_at: Optional[datetime] = None
     processing_error: Optional[str] = None
