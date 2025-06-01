@@ -2,10 +2,10 @@ from datetime import datetime
 from typing import Optional, Any
 
 from bson import ObjectId
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, EmailStr, constr
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, EmailStr, constr, FileUrl
 from pydantic_core import core_schema
 
-from app.constants import UserRole
+from app.constants import UserRole, FileType, FileUploadStatus
 
 
 class PyObjectId(ObjectId):
@@ -69,6 +69,24 @@ class BusinessUserMapping(BaseModel):
     role: UserRole
     joined_at: datetime
     approved_by: Optional[PyObjectId] = None
+
+    model_config = {
+        "populate_by_name": True,
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str},
+    }
+
+class FileUpload(BaseModel):
+    id: Optional[PyObjectId] = Field(default=None, alias="_id")
+    file_url: FileUrl
+    file_type: FileType
+    status: FileUploadStatus
+    created_at: datetime
+    processed_at: Optional[datetime] = None
+    processing_started_at: Optional[datetime] = None
+    processing_error: Optional[str] = None
+    business_id: PyObjectId
+    user_id: PyObjectId
 
     model_config = {
         "populate_by_name": True,
